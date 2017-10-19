@@ -10,7 +10,7 @@ class Sensor
 		Sensor(Alarm alarm);
 		verificar();
 	private:
-		
+		Alarm _alarm;
 };
 
 #endif
