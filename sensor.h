@@ -1,16 +1,23 @@
-#ifndef Sensor_h
-#define Sensor_h
+#ifndef sensor_h
+#define sensor_h
 
 #include "Arduino.h"
-#include "Alarm.h"
 
-class Sensor
-{
-	public:
-		Sensor(Alarm alarm);
-		verificar();
-	private:
-		Alarm _alarm;
+
+class Sensor {
+   private:
+      
+   public:
+      int pinData;
+      double umbral;
+      Sensor(int pinData, int  umbral);
+      bool hayFalla();
+};
+
+class SensorLlama : public Sensor {
+  public:
+     SensorLlama(int pinData, int  umbral);
+     bool hayFalla();
 };
 
 #endif

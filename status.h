@@ -3,13 +3,4 @@
 
 #include "Arduino.h"
 
-class Status
-{
-	public:
-		Status();
-		Status execute();
-	private:
-		int _active;
-};
-
 #endif

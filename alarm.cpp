@@ -1,33 +1,52 @@
 #include "Arduino.h"
 #include "Alarm.h"
 
-Alarm::Alarm(){
-	_status=new Status();
+
+Alarm::Alarm(Sensor* sensor) {
+   sensor = sensor;
+   //lcd = lcd;
+};
+
+void Alarm::check(bool enable, bool falla, bool ack, String mode) {
+    String modo_alarma = mode;
+
+    if (enable) {
+
+      if (falla && !ack) 
+            this->executeNormal();
+          else if (falla && ack)
+            this->executeAck();
+          else if (!falla)
+            if (estado_falla) 
+              this->executeBlink();
+            else
+              this->executeDesactivar();
+        }
+        //guardo estado previo de falla
+      estado_falla = falla;
+
+};
+
+AlarmaLlama::AlarmaLlama(Sensor* sensor) : Alarm(sensor){
+  
 }
 
-void Alarm::check(int enable, int fail, int ack){
-	if(_status){
-		if(enable){
-			Status statusAux = _status.execute(enable, fail, ack);
-			delete _status;
-			_status=statusAux;
-		}else{
-			disable();
-		}
-	}else if(!_status){
-		enable();
-	}
+void AlarmaLlama::executeNormal() {
+     Serial.println("execute normal");
+}
+void AlarmaLlama::executeAck() {
+     Serial.println("execute ack");
+}
+void AlarmaLlama::executeBlink() {
+     Serial.println("execute blink");
+}
+void AlarmaLlama::executeDesactivar() {
+     Serial.println("execute desactivar");
 }
 
-void enable(){
-	if(!_status){
-		_status=new Status();
-	}
+void AlarmaLlama::check(bool enable, bool fail, bool ack, String mode) {
+     Alarm::check(enable,fail, ack,  mode);
 }
 
-void disable(){
-	if(_status){
-		delete _status;
-		_status=NULL;
-	}
-}
+
+
