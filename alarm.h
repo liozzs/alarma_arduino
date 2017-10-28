@@ -7,11 +7,13 @@
 #include <LiquidCrystal.h>
 
 class Alarm{
-   private:
+
+   protected:
       Sensor sensor = sensor;
       char*  modo_alarma;
       LiquidCrystal lcd = lcd;
       bool estado_falla;
+      bool estado_ack;
    public:
       // Funciones miembro de la clase "pareja"
       Alarm(Sensor* sensor);
@@ -22,10 +24,14 @@ class Alarm{
       void mostrarEstado();
       void getInfoSensor();
       void check(bool enable, bool fail, bool ack, String mode);
+
 };
 
 class AlarmaLlama : public Alarm {
-
+  private:
+      unsigned long lastPeriodStart;
+      const int onDuration=500;
+      const int periodDuration=800;
   public:
    AlarmaLlama(Sensor* sensor);
 

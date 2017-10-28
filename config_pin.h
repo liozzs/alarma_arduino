@@ -1,6 +1,9 @@
 #ifndef config_pin_h
 #define config_pin_h
 
+//CONFIGURACION GLOBAL
+const int MAIN_LOOP_DELAY = 100;
+
 //CONFIGURACION PINES
 const int PIN_ENABLE = 22;
 const int PIN_ACK = 31;

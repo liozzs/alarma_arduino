@@ -23,12 +23,16 @@ Keypad teclado = getKeypad();
 
 void setup() {
   Serial.begin(9600);
-}
-
-void loop() {
   //SET pin modes
   pinMode(PIN_ENABLE, INPUT);
   pinMode(PIN_ACK, INPUT);
+  
+  pinMode(LED, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+}
+
+void loop() {
+
 
   //leer teclado
 
@@ -44,7 +48,8 @@ void loop() {
 
   //leer entradas
   bool enable = digitalRead(PIN_ENABLE);
-  bool ack =  digitalRead(PIN_ACK);
+  bool ack =  !digitalRead(PIN_ACK);
+
   enable = true;
   //alarmas
   //falla = sensorTemperatura.hayFalla();
@@ -52,7 +57,7 @@ void loop() {
 
   bool falla = sensorLlama.hayFalla();
   alarmaLlama.check(enable, falla, ack, modo);
-  delay(100);
+  delay(MAIN_LOOP_DELAY);
 }
 
 
