@@ -1,28 +1,36 @@
-#ifndef Alarm_h
-#define Alarm_h
+#ifndef _ALARM_h
+#define _ALARM_h
 
-#include "Arduino.h"
-#include "Status.h"
+#include "arduino.h"
+#include "status.h"
 #include "sensor.h"
+#include "config_pin.h"
 #include <LiquidCrystal.h>
+#include <LinkedList.h>
+
+class Sensor;
 
 class Alarm{
 
    protected:
-      Sensor sensor = sensor;
-      char*  modo_alarma;
-      LiquidCrystal lcd = lcd;
+      int modoOperacion;
+      LiquidCrystal *lcd;
       bool estado_falla;
       bool estado_ack;
+	  LinkedList<Sensor*> sensores = LinkedList<Sensor*>();
    public:
-      // Funciones miembro de la clase "pareja"
-      Alarm(Sensor* sensor);
+      
+      Alarm();
+	  void menu();
+	  bool getEnable();
+	  int getMode();
+	  /*
       virtual void executeNormal();
       virtual void executeAck();
       virtual void executeBlink();
       virtual void executeDesactivar();
       void mostrarEstado();
-      void getInfoSensor();
+      void getInfoSensor(); */
       void check(bool enable, bool fail, bool ack, String mode);
 
 };
@@ -33,14 +41,14 @@ class AlarmaLlama : public Alarm {
       const int onDuration=500;
       const int periodDuration=800;
   public:
-   AlarmaLlama(Sensor* sensor);
+   AlarmaLlama();
 
    void executeNormal();
       void executeAck();
       void executeBlink();
       void executeDesactivar();
-      void mostrarEstado();
-      void getInfoSensor();
+     // void mostrarEstado();
+     //void getInfoSensor();
       void check(bool enable, bool fail, bool ack, String mode);
 };
 

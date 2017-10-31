@@ -1,12 +1,13 @@
-#include "Arduino.h"
-#include "Sensor.h"
+#include "arduino.h"
+#include "sensor.h"
 
-Sensor::Sensor(int pinData, int umbral){
-       pinData = pinData;
-       umbral = umbral;
+Sensor::Sensor(int _pinData, int _umbral, Alarm *_alarma){
+	pinData = _pinData;
+    umbral = _umbral;
+	alarma = _alarma;
 }
 
-SensorLlama::SensorLlama(int pinData, int umbral) : Sensor(pinData, umbral) {
+SensorLlama::SensorLlama(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData, _umbral, _alarma) {
 
   
 };

@@ -1,7 +1,8 @@
-#ifndef teclado_h
-#define teclado_h
+#ifndef _TECLADO_h
+#define _TECLADO_h
 
 #include <Keypad.h>
+#include "config_pin.h"
 
 Keypad getKeypad();
 

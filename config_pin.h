@@ -1,5 +1,5 @@
-#ifndef config_pin_h
-#define config_pin_h
+#ifndef _CONFIG_PIN_h
+#define _CONFIG_PIN_h
 
 //CONFIGURACION GLOBAL
 const int MAIN_LOOP_DELAY = 100;
