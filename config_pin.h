@@ -3,13 +3,18 @@
 
 //CONFIGURACION GLOBAL
 const int MAIN_LOOP_DELAY = 100;
+const int DELAY_POST = 2000; // 60 minuto
+const int DELAY_GET = 10000; //10 segundos
+
+const int WIFI_ENABLE = true;
 
 //CONFIGURACION PINES
 const int PIN_ENABLE = 22;
 const int PIN_ACK = 31;
 
 //
-const int SENSOR_LLAMA = 12;
+const int SENSOR_LLAMA = A0;
+const int SENSOR_TEMPERATURA = 2;
 
 
 //ACTUADORES
@@ -31,3 +36,4 @@ const char hexaKeys[TECLADO_ROWS][TECLADO_COLS] = {
 };
 
 #endif
+

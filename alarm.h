@@ -17,10 +17,10 @@ class Alarm{
    public:
       // Funciones miembro de la clase "pareja"
       Alarm(Sensor* sensor);
-      virtual void executeNormal();
-      virtual void executeAck();
-      virtual void executeBlink();
-      virtual void executeDesactivar();
+      virtual void executeNormal()=0;
+      virtual void executeAck()=0;
+      virtual void executeBlink()=0;
+      virtual void executeDesactivar()=0;
       void mostrarEstado();
       void getInfoSensor();
       void check(bool enable, bool fail, bool ack, String mode);
@@ -33,9 +33,24 @@ class AlarmaLlama : public Alarm {
       const int onDuration=500;
       const int periodDuration=800;
   public:
-   AlarmaLlama(Sensor* sensor);
+      AlarmaLlama(Sensor* sensor);
+      void executeNormal();
+      void executeAck();
+      void executeBlink();
+      void executeDesactivar();
+      void mostrarEstado();
+      void getInfoSensor();
+      void check(bool enable, bool fail, bool ack, String mode);
+};
 
-   void executeNormal();
+class AlarmaTemperatura : public Alarm {
+  private:
+      unsigned long lastPeriodStart;
+      const int onDuration=500;
+      const int periodDuration=800;
+  public:
+      AlarmaTemperatura(Sensor* sensor);
+      void executeNormal();
       void executeAck();
       void executeBlink();
       void executeDesactivar();
@@ -45,3 +60,4 @@ class AlarmaLlama : public Alarm {
 };
 
 #endif
+

@@ -4,13 +4,13 @@
 
 Alarm::Alarm(Sensor* sensor) {
    sensor = sensor;
-   
    //lcd = lcd;
-};
+}
 
 void Alarm::check(bool enable, bool falla, bool ack, String mode) {
     String modo_alarma = mode;
 
+    // guardo cuando se hizo ack
     if (ack == true) {
       estado_ack = true;
       estado_falla = false;
@@ -32,14 +32,15 @@ void Alarm::check(bool enable, bool falla, bool ack, String mode) {
         if (falla == true && !estado_ack)
           estado_falla = true;
 
-};
-
-
-AlarmaLlama::AlarmaLlama(Sensor* sensor) : Alarm(sensor){
-
-
 }
 
+AlarmaLlama::AlarmaLlama(Sensor* sensor) : Alarm(sensor){
+}
+
+AlarmaTemperatura::AlarmaTemperatura(Sensor* sensor) : Alarm(sensor){
+}
+
+//AlarmaLlama
 void AlarmaLlama::executeNormal() {
      Serial.println("execute normal");
      digitalWrite(LED, HIGH);
@@ -67,6 +68,36 @@ void AlarmaLlama::executeDesactivar() {
 void AlarmaLlama::check(bool enable, bool fail, bool ack, String mode) {
      Alarm::check(enable,fail, ack,  mode);
 }
+
+//AlarmaTemperatura
+void AlarmaTemperatura::executeNormal() {
+     Serial.println("execute normal");
+     digitalWrite(LED, HIGH);
+
+     if (millis()-lastPeriodStart>=periodDuration)
+  {
+    lastPeriodStart+=periodDuration;
+    tone(BUZZER, 800, onDuration); // play 800 Hz tone in background for 'onDuration'
+  }
+}
+void AlarmaTemperatura::executeAck() {
+     Serial.println("execute ack");
+     noTone(BUZZER);
+}
+void AlarmaTemperatura::executeBlink() {
+     Serial.println("execute blink");
+     digitalWrite(LED, millis()>>9 &1); // blinking sin usar delay
+}
+void AlarmaTemperatura::executeDesactivar() {
+     Serial.println("execute desactivar");
+     digitalWrite(LED, LOW);
+     noTone(BUZZER);
+}
+
+void AlarmaTemperatura::check(bool enable, bool fail, bool ack, String mode) {
+     Alarm::check(enable,fail, ack,  mode);
+}
+
 
 
 
