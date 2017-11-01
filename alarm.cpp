@@ -9,7 +9,6 @@ Alarm::Alarm(){
 
 	pinMode(LED, OUTPUT);
 	pinMode(BUZZER, OUTPUT);
-
 }
 
 void Alarm::menu()
@@ -32,9 +31,42 @@ int Alarm::getMode()
 	return modoOperacion;
 }
 
+void Alarm::verificarSensores()
+{
+	Sensor *sensor;
+
+	//Recorrer lista de sensores
+	for (int i = 0; i < sensores.size(); i++) {
+
+		sensor = sensores.get(i);	//Obtener sensor de la lista
+
+		//Ejecutar sensado de acuerdo al modo de operacion activo
+		switch (this->getMode()) {
+
+		case MODO_NORMAL:
+			sensor->executeNormal();
+			break;
+
+		case MODO_TEST:
+			sensor->executeTest();
+			break;
+
+		case MODO_MANT:
+			sensor->executeMant();
+			break;
+		}
+	}
+}
+
+void Alarm::activarBuzzer()
+{
+
+}
+
+/*
 void Alarm::check(bool enable, bool falla, bool ack, String mode) {
     String modo_alarma = mode;
-	/*
+	
     if (ack == true) {
       estado_ack = true;
       estado_falla = false;
@@ -55,7 +87,7 @@ void Alarm::check(bool enable, bool falla, bool ack, String mode) {
         //guardo estado previo de falla
         if (falla == true && !estado_ack)
           estado_falla = true;
-		  */
+		  
 }
 
 
@@ -92,5 +124,5 @@ void AlarmaLlama::check(bool enable, bool fail, bool ack, String mode) {
      Alarm::check(enable,fail, ack,  mode);
 }
 
-
+*/
 

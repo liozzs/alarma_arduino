@@ -9,8 +9,26 @@ Sensor::Sensor(int _pinData, int _umbral, Alarm *_alarma){
 
 SensorLlama::SensorLlama(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData, _umbral, _alarma) {
 
-  
-};
+}
+
+void SensorLlama::executeNormal()
+{
+	if (this->hayFalla) {
+
+		alarma->activarBuzzer();
+	}
+
+}
+
+void SensorLlama::executeTest()
+{
+
+}
+
+void SensorLlama::executeMant()
+{
+
+}
 
 bool SensorLlama::hayFalla(){
   // read the sensor on analog A0:
@@ -39,5 +57,5 @@ bool SensorLlama::hayFalla(){
   }
 
   return falla;
-};
+}
 

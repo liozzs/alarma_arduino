@@ -6,21 +6,26 @@
 class Alarm;
 
 class Sensor {
-   private:
-      
-   public:
-      int pinData;
-	  int zona;
-      double umbral;
-	  Alarm *alarma;
+   protected:
+	   int pinData;
+	   int zona;
+	   double umbral;
+	   Alarm *alarma;
 
+   public:
       Sensor(int pinData, int  umbral, Alarm *_alarma);
-      bool hayFalla();
+	  virtual void executeNormal();
+	  virtual void executeTest();
+	  virtual void executeMant();
+      virtual bool hayFalla();
 };
 
 class SensorLlama : public Sensor {
   public:
      SensorLlama(int _pinData, int _umbral, Alarm *_alarma);
+	 void executeNormal();
+	 void executeTest();
+	 void executeMant();
      bool hayFalla();
 };
 

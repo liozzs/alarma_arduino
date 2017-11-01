@@ -8,6 +8,17 @@
 #include <LiquidCrystal.h>
 #include <LinkedList.h>
 
+//Modos de operacion
+#define MODO_NORMAL 1
+#define MODO_TEST	2
+#define MODO_MANT	3
+
+//Estados
+#define EST_ACTIVA	 1
+#define EST_DESACT	 2
+#define EST_ACK		 3
+#define EST_ALARMADA 4
+
 class Sensor;
 
 class Alarm{
@@ -15,8 +26,7 @@ class Alarm{
    protected:
       int modoOperacion;
       LiquidCrystal *lcd;
-      bool estado_falla;
-      bool estado_ack;
+      int estado;
 	  LinkedList<Sensor*> sensores = LinkedList<Sensor*>();
    public:
       
@@ -24,17 +34,10 @@ class Alarm{
 	  void menu();
 	  bool getEnable();
 	  int getMode();
-	  /*
-      virtual void executeNormal();
-      virtual void executeAck();
-      virtual void executeBlink();
-      virtual void executeDesactivar();
-      void mostrarEstado();
-      void getInfoSensor(); */
-      void check(bool enable, bool fail, bool ack, String mode);
-
+	  void verificarSensores();
+	  void activarBuzzer();
 };
-
+/*
 class AlarmaLlama : public Alarm {
   private:
       unsigned long lastPeriodStart;
@@ -42,14 +45,7 @@ class AlarmaLlama : public Alarm {
       const int periodDuration=800;
   public:
    AlarmaLlama();
-
-   void executeNormal();
-      void executeAck();
-      void executeBlink();
-      void executeDesactivar();
-     // void mostrarEstado();
-     //void getInfoSensor();
       void check(bool enable, bool fail, bool ack, String mode);
 };
-
+*/
 #endif

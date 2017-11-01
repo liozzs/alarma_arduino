@@ -8,16 +8,11 @@
 #include "teclado.h"
 // Fin include
 
-#define MODO_NORMAL 1
-#define MODO_TEST	2
-#define MODO_MANT	3
 
 //SENSORES
 //sensorTemperatura =
 //SensorLlama sensorLlama = SensorLlama(A0, 1);
 
-//DISPLAY
-//lcd = 
 
 //ALARMAS
 //alarmaTemperatura = new AlarmaTemperatura(sensorTemperatura, lcd);
@@ -40,21 +35,9 @@ void loop() {
 	//Maneja el menu de opciones: cambio de modo, activacion/desactivacion de alarma, agregar sensores, etc.
 	alarma->menu();
 
-	//Verificar si la alarma esta activa y el modo de operacion en ejecucion
+	//Verificar si la alarma esta activa
 	if (alarma->getEnable()){
-	
-		switch (alarma->getMode()) {
-
-			case MODO_NORMAL:
-			break;
-
-			case MODO_TEST:
-			break;
-
-			case MODO_MANT:
-			break;
-
-		}
+		alarma->verificarSensores();
 	}
 
 	/*	//logica para leer codigos y cambiar modo normal, test, mantenimiento
