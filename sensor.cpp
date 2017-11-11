@@ -5,27 +5,69 @@ Sensor::Sensor(int _pinData, int _umbral, Alarm *_alarma){
 	pinData = _pinData;
     umbral = _umbral;
 	alarma = _alarma;
+
+	led = LED;
 }
 
-SensorLlama::SensorLlama(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData, _umbral, _alarma) {
-
-}
-
-void SensorLlama::executeNormal()
+void Sensor::executeNormal()
 {
-	if (this->hayFalla) {
 
-		alarma->activarBuzzer();
+	//Ejecutar de acuerdo al modo de operacion activo
+	switch (alarma->getMode()) {
+
+	case MODO_NORMAL:
+		this->modoNormal();
+		break;
+
+	case MODO_TEST:
+		this->modoTest();
+		break;
+
+	case MODO_MANT:
+		this->modoMant();
+		break;
 	}
 
 }
 
-void SensorLlama::executeTest()
+void Sensor::executeBlink()
+{
+	Serial.println("execute blink");
+	digitalWrite(led, millis() >> 9 & 1); // blinking sin usar delay
+}
+
+void Sensor::executeDesactivar()
+{
+	Serial.println("execute desactivar");
+	digitalWrite(led, LOW);
+	alarma->desactivarBuzzer();
+}
+
+void Sensor::executeAck()
+{
+	Serial.println("execute ack");
+	alarma->desactivarBuzzer();
+}
+
+SensorLlama::SensorLlama(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData, _umbral, _alarma){
+
+}
+
+void SensorLlama::modoNormal()
+{
+	Serial.println("execute normal");
+
+	digitalWrite(led, HIGH);
+
+	alarma->activarBuzzer();
+}
+
+void SensorLlama::modoTest()
 {
 
 }
 
-void SensorLlama::executeMant()
+void SensorLlama::modoMant()
 {
 
 }

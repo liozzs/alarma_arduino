@@ -27,6 +27,10 @@ class Alarm{
       int modoOperacion;
       LiquidCrystal *lcd;
       int estado;
+	  bool ack = false, estado_ack = false, estado_falla = false;
+	  unsigned long lastPeriodStart = 0;
+	  const int onDuration = 500;
+	  const int periodDuration = 800;
 	  LinkedList<Sensor*> sensores = LinkedList<Sensor*>();
    public:
       
@@ -36,16 +40,9 @@ class Alarm{
 	  int getMode();
 	  void verificarSensores();
 	  void activarBuzzer();
+	  void desactivarBuzzer();
+	  void addSensor(Sensor*);
 };
-/*
-class AlarmaLlama : public Alarm {
-  private:
-      unsigned long lastPeriodStart;
-      const int onDuration=500;
-      const int periodDuration=800;
-  public:
-   AlarmaLlama();
-      void check(bool enable, bool fail, bool ack, String mode);
-};
-*/
+
+
 #endif

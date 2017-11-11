@@ -9,11 +9,13 @@ Alarm::Alarm(){
 
 	pinMode(LED, OUTPUT);
 	pinMode(BUZZER, OUTPUT);
+
+	this->modoOperacion = MODO_NORMAL;
 }
 
 void Alarm::menu()
 {
-
+	ack = !digitalRead(PIN_ACK);
 }
 
 bool Alarm::getEnable()
@@ -23,7 +25,7 @@ bool Alarm::getEnable()
 	if (enable == HIGH)
 		return true;
 	else
-		return false;
+		return true;
 }
 
 int Alarm::getMode()
@@ -34,95 +36,65 @@ int Alarm::getMode()
 void Alarm::verificarSensores()
 {
 	Sensor *sensor;
+	bool falla;
+	bool changeAck = false;
 
-	//Recorrer lista de sensores
-	for (int i = 0; i < sensores.size(); i++) {
+	// guardo cuando se hizo ack
+	if (ack == true) {
+		estado_ack = true;
+		estado_falla = false;
+		ack = false;
+	}
+	
+	changeAck = !estado_ack;
 
-		sensor = sensores.get(i);	//Obtener sensor de la lista
+	if (this->getEnable()){
 
-		//Ejecutar sensado de acuerdo al modo de operacion activo
-		switch (this->getMode()) {
+		//Recorrer lista de sensores
+		for(int i = 0; i < sensores.size(); i++) {
 
-		case MODO_NORMAL:
-			sensor->executeNormal();
-			break;
+			sensor = sensores.get(i);	//Obtener sensor de la lista
 
-		case MODO_TEST:
-			sensor->executeTest();
-			break;
+			falla = sensor->hayFalla();
 
-		case MODO_MANT:
-			sensor->executeMant();
-			break;
+			if (falla && !estado_ack)
+				sensor->executeNormal();
+			else if (falla && estado_ack)
+				sensor->executeAck();
+			else if (!falla) {
+				if (sensor->estado_falla)
+					sensor->executeBlink();
+				else {
+					changeAck = true;
+					sensor->executeDesactivar();
+				}
+			}
+			//guardo estado previo de falla
+			if (falla == true && changeAck){
+				sensor->estado_falla = true;
+				estado_falla = true;
+			}
 		}
+		if (changeAck)				//Actualizar estado ack
+			estado_ack = false;
 	}
 }
 
 void Alarm::activarBuzzer()
 {
-
+	if (millis() - lastPeriodStart >= periodDuration)
+	{
+		lastPeriodStart += periodDuration;
+		tone(BUZZER, 800, onDuration); // play 800 Hz tone in background for 'onDuration'
+	}
 }
 
-/*
-void Alarm::check(bool enable, bool falla, bool ack, String mode) {
-    String modo_alarma = mode;
-	
-    if (ack == true) {
-      estado_ack = true;
-      estado_falla = false;
-    }
-    if (enable) {
-          if (falla && !estado_ack) 
-            this->executeNormal();
-          else if (falla && estado_ack)
-            this->executeAck();
-          else if (!falla)
-            if (estado_falla) 
-              this->executeBlink();
-            else {
-              estado_ack = false;
-              this->executeDesactivar();
-            }
-        }
-        //guardo estado previo de falla
-        if (falla == true && !estado_ack)
-          estado_falla = true;
-		  
+void Alarm::desactivarBuzzer()
+{
+	noTone(BUZZER);
 }
 
-
-AlarmaLlama::AlarmaLlama() : Alarm(){
-
-
+void Alarm::addSensor(Sensor* _sensor)
+{
+	sensores.add(_sensor);
 }
-
-void AlarmaLlama::executeNormal() {
-     Serial.println("execute normal");
-     digitalWrite(LED, HIGH);
-
-     if (millis()-lastPeriodStart>=periodDuration)
-  {
-    lastPeriodStart+=periodDuration;
-    tone(BUZZER, 800, onDuration); // play 800 Hz tone in background for 'onDuration'
-  }
-}
-void AlarmaLlama::executeAck() {
-     Serial.println("execute ack");
-     noTone(BUZZER);
-}
-void AlarmaLlama::executeBlink() {
-     Serial.println("execute blink");
-     digitalWrite(LED, millis()>>9 &1); // blinking sin usar delay
-}
-void AlarmaLlama::executeDesactivar() {
-     Serial.println("execute desactivar");
-     digitalWrite(LED, LOW);
-     noTone(BUZZER);
-}
-
-void AlarmaLlama::check(bool enable, bool fail, bool ack, String mode) {
-     Alarm::check(enable,fail, ack,  mode);
-}
-
-*/
-

@@ -9,11 +9,11 @@ const int PIN_ENABLE = 22;
 const int PIN_ACK = 31;
 
 //
-const int SENSOR_LLAMA = 12;
+const int PIN_SENSOR_LLAMA = A0;
 
 
 //ACTUADORES
-const int LED = 22;
+const int LED = 13;
 const int BUZZER = 24;
 
 //TECLADO
