@@ -10,10 +10,12 @@ const int PIN_ACK = 31;
 
 //
 const int PIN_SENSOR_LLAMA = A0;
+const int PIN_SENSOR_TEMPERATURA = 28; //lee temperatura y humedad al mismo tiempo
+const int PIN_SENSOR_PIR = 33;
 
 
 //ACTUADORES
-const int LED = 13;
+const int LED = 26;
 const int BUZZER = 24;
 
 //TECLADO

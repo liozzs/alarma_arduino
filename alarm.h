@@ -2,7 +2,6 @@
 #define _ALARM_h
 
 #include "arduino.h"
-#include "status.h"
 #include "sensor.h"
 #include "config_pin.h"
 #include <LiquidCrystal.h>
@@ -24,17 +23,18 @@ class Sensor;
 class Alarm{
 
    protected:
-      int modoOperacion;
-      LiquidCrystal *lcd;
-      int estado;
-	  bool ack = false, estado_ack = false, estado_falla = false;
-	  unsigned long lastPeriodStart = 0;
-	  const int onDuration = 500;
-	  const int periodDuration = 800;
-	  LinkedList<Sensor*> sensores = LinkedList<Sensor*>();
-   public:
-      
-      Alarm();
+    int modoOperacion;
+    LiquidCrystal *lcd;
+    int estado;
+    bool ack = false, estado_ack = false, estado_falla = false;
+    unsigned long lastPeriodStart = 0;
+    const int onDuration = 500;
+    const int periodDuration = 1500;
+    LinkedList<Sensor*> sensores = LinkedList<Sensor*>();
+    bool enviarSMS;
+   
+   public: 
+    Alarm();
 	  void menu();
 	  bool getEnable();
 	  int getMode();
@@ -42,6 +42,7 @@ class Alarm{
 	  void activarBuzzer();
 	  void desactivarBuzzer();
 	  void addSensor(Sensor*);
+    void enviarEstado();
 };
 
 
