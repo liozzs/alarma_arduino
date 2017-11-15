@@ -15,6 +15,9 @@ Alarm::Alarm(){
 
 	this->modoOperacion = MODO_NORMAL;
   this->estado = EST_ACTIVA;
+
+  menu = new Menu(this);
+
 }
 
 void Alarm::mostrarMenu()
