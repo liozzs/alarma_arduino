@@ -8,3 +8,6 @@ Para compilar el programa se debe desarcargar las librerias:
 - ArduinoJson: https://github.com/bblanchon/ArduinoJson
 - SimpleDHT11
 
+Dashboard:
+https://freeboard.io/board/lfsCLZ
+
