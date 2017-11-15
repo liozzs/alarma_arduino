@@ -4,15 +4,23 @@
 //CONFIGURACION GLOBAL
 const int MAIN_LOOP_DELAY = 100;
 
-//CONFIGURACION PINES
+//CONFIGURACION PINES ALARMA
 const int PIN_ENABLE = 22;
 const int PIN_ACK = 31;
 
-//
+//SENSORES
 const int PIN_SENSOR_LLAMA = A0;
 const int PIN_SENSOR_TEMPERATURA = 28; //lee temperatura y humedad al mismo tiempo
 const int PIN_SENSOR_PIR = 33;
 
+//LCD
+const int PIN_LCD_KEYPAD = A1;
+const int PIN_LCD_RS = 8;
+const int PIN_LCD_EN = 9;
+const int PIN_LCD_D0 = 4;
+const int PIN_LCD_D1 = 5;
+const int PIN_LCD_D2 = 6;
+const int PIN_LCD_D3 = 7;
 
 //ACTUADORES
 const int LED = 26;
@@ -20,16 +28,16 @@ const int BUZZER = 24;
 
 //TECLADO
 const byte TECLADO_ROWS = 4; //filas
-const byte TECLADO_COLS = 4; //columnas
+const byte TECLADO_COLS = 3; //columnas
 
-const byte rowPins[TECLADO_ROWS] = {9,8,7,6}; 
-const byte colPins[TECLADO_COLS] = {5,4,3,2};
+const byte rowPins[TECLADO_ROWS] = {39,40,42,44}; 
+const byte colPins[TECLADO_COLS] = {46,48,50};
 
 const char hexaKeys[TECLADO_ROWS][TECLADO_COLS] = {
-  {'1','2','3', 'A'},
-  {'4','5','6','B'},
-  {'7','8','9','C'},
-  {'*','0','#','D'}
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','#'}
 };
 
 #endif

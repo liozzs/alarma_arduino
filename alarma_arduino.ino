@@ -5,7 +5,6 @@
 #include <LiquidCrystal.h>
 #include "config_pin.h"
 #include "alarm.h"
-#include "teclado.h"
 #include "conectividad.h"
 // Fin include
 
@@ -40,11 +39,10 @@ void setup() {
 void loop() {
 
 	//Maneja el menu de opciones: cambio de modo, activacion/desactivacion de alarma, agregar sensores, etc.
-	alarma->menu();
+	 alarma->mostrarMenu();
 
 	//Verificar estados sensores
 	alarma->verificarSensores();
-
   
 
   if(millis()>tiempoAnterior + PERIODO_DWEET){ 
