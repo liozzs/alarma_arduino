@@ -30,8 +30,8 @@ const int BUZZER = 24;
 const byte TECLADO_ROWS = 4; //filas
 const byte TECLADO_COLS = 3; //columnas
 
-const byte rowPins[TECLADO_ROWS] = {39,40,42,44}; 
-const byte colPins[TECLADO_COLS] = {46,48,50};
+const byte rowPins[TECLADO_ROWS] = {39,41,43,45}; 
+const byte colPins[TECLADO_COLS] = {47,49,51};
 
 const char hexaKeys[TECLADO_ROWS][TECLADO_COLS] = {
   {'1','2','3'},
