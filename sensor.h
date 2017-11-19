@@ -17,7 +17,9 @@ class Sensor {
 
   public:
     bool estado_falla = false;
+    bool desactivado = false;
     String nombre;
+    String dweetCode;
     Sensor(int pinData, int  umbral, Alarm *_alarma);
     void executeNormal();
     void executeBlink();
@@ -71,6 +73,17 @@ class SensorPIR : public Sensor {
 
   public:
     SensorPIR(int _pinData, int _umbral, Alarm *_alarma);
+    void modoNormal();
+    void modoTest();
+    void modoMant();
+    bool hayFalla();
+    int leer();
+};
+
+class SensorCO2 : public Sensor {
+
+  public:
+    SensorCO2(int _pinData, int _umbral, Alarm *_alarma);
     void modoNormal();
     void modoTest();
     void modoMant();

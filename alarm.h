@@ -42,16 +42,22 @@ class Alarm{
     int modoOperacion;
     LiquidCrystal *lcd;
     int estado;
-    bool ack = false, estado_ack = false, estado_falla = false;
+    bool ack = false; // hubo algun ack sobre la falla?
+    bool estado_ack = false;
+    bool estado_falla = false;
+    bool algunoEnFalla = false; // usado para verificar si algun sensor fallo, util para no volver activar actuadores en caso de que otro este en falla
+    bool ackExterno = false; //usado para informar ack desde dashboard
     unsigned long lastPeriodStart = 0;
     const int onDuration = 500;
-    const int periodDuration = 1500;
+    const int periodDuration = 800;
     LinkedList<Sensor*> sensores = LinkedList<Sensor*>();
-    bool enviarSMS;
+    bool envioSMS;
     Menu *menu;
+    String numero_cel = "";
 
    
    public: 
+    bool fallaGlobal = false;
     Alarm();
 	  void mostrarMenu();
 	  bool getEnable();
@@ -62,8 +68,14 @@ class Alarm{
 	  void verificarSensores();
 	  void activarBuzzer();
 	  void desactivarBuzzer();
+    void activarLED();
+    void desactivarLED();
 	  void addSensor(Sensor*);
     void enviarEstado();
+    void enviarSMS(String msg);
+    void procesarAcciones();
+    void reset();
+    void log(String msg);
 };
 
 

@@ -12,6 +12,7 @@ const int PIN_ACK = 31;
 const int PIN_SENSOR_LLAMA = A0;
 const int PIN_SENSOR_TEMPERATURA = 28; //lee temperatura y humedad al mismo tiempo
 const int PIN_SENSOR_PIR = 33;
+const int PIN_SENSOR_CO2 = A1;
 
 //LCD
 const int PIN_LCD_KEYPAD = A1;

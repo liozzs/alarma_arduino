@@ -1,8 +1,9 @@
 #include "arduino.h"
 #include "alarm.h"
+#include "conectividad.h"
 #include <ArduinoJson.h>
 
- StaticJsonBuffer<300> jsonBuffer;
+ //StaticJsonBuffer<300> jsonBuffer;
  
 Alarm::Alarm(){
 	   
@@ -22,7 +23,7 @@ Alarm::Alarm(){
 
 void Alarm::mostrarMenu()
 {
-  ack = !digitalRead(PIN_ACK);
+  ack = !digitalRead(PIN_ACK) || ackExterno;
 
   menu->printMenu();
 }
@@ -57,6 +58,14 @@ void Alarm::desactivar()
   this->estado = EST_DESACT;
   this->estado_ack = false;
   this->estado_falla = false;
+  this->ackExterno = false;
+  this->desactivarLED();
+  this->desactivarBuzzer();
+}
+
+void Alarm::reset(){
+  desactivar();
+  activar();
 }
 
 void Alarm::verificarSensores()
@@ -76,6 +85,7 @@ void Alarm::verificarSensores()
 
   if (this->getEnable() && this->estado != EST_DESACT){
 
+    algunoEnFalla = false;
     //Recorrer lista de sensores
     for(int i = 0; i < sensores.size(); i++) {
 
@@ -83,6 +93,11 @@ void Alarm::verificarSensores()
 
       falla = sensor->hayFalla();
 
+      if (falla) {
+        algunoEnFalla = true;
+        fallaGlobal = true;
+      }
+      
       if (falla && !estado_ack)
         sensor->executeNormal();
       else if (falla && estado_ack)
@@ -101,9 +116,12 @@ void Alarm::verificarSensores()
         estado_falla = true;
       }
     }
-    if (changeAck)        //Actualizar estado ack
-      estado_ack = false;
+    //if (changeAck)        //Actualizar estado ack //comente esto para que no se active la alarma despues del ack, revisar
+      //estado_ack = false;
   }
+
+  if (!algunoEnFalla)
+    fallaGlobal = false;
 }
 
 void Alarm::activarBuzzer()
@@ -117,7 +135,16 @@ void Alarm::activarBuzzer()
 
 void Alarm::desactivarBuzzer()
 {
+  Serial.println("desactivar");
 	noTone(BUZZER);
+}
+
+void Alarm::activarLED(){
+  digitalWrite(LED, LOW);
+}
+
+void Alarm::desactivarLED(){
+  digitalWrite(LED, HIGH);
 }
 
 void Alarm::addSensor(Sensor* _sensor)
@@ -125,46 +152,55 @@ void Alarm::addSensor(Sensor* _sensor)
 	sensores.add(_sensor);
 }
 
-JsonObject& root = jsonBuffer.createObject();
-
-void sendToWIFI(String str){
-  while(str.length() < 128){
-    str+='\0';
-  }
-  Serial1.println(str);
-}
-
 void Alarm::enviarEstado()
 {
+  StaticJsonBuffer<150> jsonBuffer;
+  JsonObject& root = jsonBuffer.createObject();
+ 
   Sensor *sensor;
-
   int lectura;
-  
-  
+ 
   //Recorrer lista de sensores
   for(int i = 0; i < sensores.size(); i++) {
     sensor = sensores.get(i); //Obtener sensor de la lista
-    float lectura = sensor->leer();
+    int lectura = sensor->leer();
     bool falla = sensor->hayFalla();
-
-    root[sensor->nombre] = String(lectura);
+    Serial.println(sensor->nombre + ": " + String(lectura));
+    root[sensor->dweetCode] = String(lectura);
     //root["falla" + sensor->nombre] = String(falla);
   }
-  //root["Estado"] = String(estado);
-  //root["Modo"] = String(modoOperacion);
+  root["E"] = String(estado);
+  root["A"] = String(estado_ack);
+  root["M"] = String(modoOperacion);
+  root["EF"] = String(estado_falla);
+
   
   String output;
   String fullOutput;
   root.printTo(output);
 
   //Serial1 es donde se conecta el WIFI
-  //sendToWIFI("modo:TEST");
   delay(100);
 
   fullOutput = "dweet:frba-ssee-alarma," + output;
-  //Serial1.write(fullOutput);
-
+  Serial.println(fullOutput);
   sendToWIFI(fullOutput);
+}
+
+void Alarm::enviarSMS(String msg){
+
+  if (this->numero_cel == "") {
+    Serial.println("NO HAY NUMERO");
+  }
+  else {
+    Serial2.println("AT+CMGF=1\r");
+    delay(100); 
+    Serial2.println("AT+CMGS=\"+549" + numero_cel + "\""); // send the SMS number
+    delay(100); 
+    Serial2.println(msg);
+    delay(100); 
+    Serial2.write(0x1A);
+  }
 }
 
 
@@ -387,3 +423,48 @@ void Menu::cambiarModo()
     }
   }
 }
+
+void Alarm::procesarAcciones()
+{
+  
+  //Procesa mensajes de WIFI / Dashboard
+  String str = leerFromWIFI();
+  if (str != "") {
+    StaticJsonBuffer<130> jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(str);
+    if (root.containsKey("estado"))
+      Serial.println(root["estado"].as<bool>());
+      if ( root["estado"].as<bool>())
+        this->activar();
+      else
+        this->desactivar();
+    if (root.containsKey("reset")) {
+        Serial.println("RESET");
+        this->desactivar();
+        this->activar();
+     }
+    else if (root.containsKey("ack"))
+      this->ackExterno = true;
+    else if (root.containsKey("num_cel")) {
+      this->numero_cel = root["num_cel"].as<String>();
+      Serial.println(this->numero_cel);
+    }
+    else if (root.containsKey("m")) 
+      this->modoOperacion = root["m"].as<int>();
+    
+    else if (root.containsKey("test_led"))
+    ;
+    else if (root.containsKey("test_buzzer"))
+    ;
+    else if (root.containsKey("test_sms"))
+    ;
+ }
+
+  //Procesa mensajes de SIM900 / SMS
+  leerFromSIM900();
+}
+
+void Alarm::log(String msg){
+//Dependiendo del MODO, loguear o no en consola
+}
+

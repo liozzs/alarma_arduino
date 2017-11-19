@@ -7,8 +7,6 @@ Sensor::Sensor(int _pinData, int _umbral, Alarm *_alarma){
 	pinData = _pinData;
   umbral = _umbral;
 	alarma = _alarma;
-
-	led = LED;
 }
 
 void Sensor::executeNormal()
@@ -33,16 +31,24 @@ void Sensor::executeNormal()
 }
 
 void Sensor::executeBlink()
-{
-	Serial.println("execute blink");
-	digitalWrite(led, millis() >> 9 & 1); // blinking sin usar delay
+{    
+    if (!alarma->fallaGlobal) { 
+  	  // blinking sin usar delay
+      if (millis() >> 9 & 1)
+        alarma->activarLED();
+      else
+        alarma->desactivarLED();
+    }
 }
 
 void Sensor::executeDesactivar()
 {
 	//Serial.println("execute desactivar");
-	digitalWrite(led, LOW);
-	alarma->desactivarBuzzer();
+ if (!desactivado) {
+	  alarma->desactivarLED();
+	  alarma->desactivarBuzzer();
+    desactivado = true;
+ }
 }
 
 void Sensor::executeAck()
@@ -53,15 +59,15 @@ void Sensor::executeAck()
 
 SensorLlama::SensorLlama(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData, _umbral, _alarma){
   nombre = "Incendio";
+  dweetCode = "S0";
 }
 
 void SensorLlama::modoNormal()
 {
 	Serial.println("execute normal");
-
-	digitalWrite(led, HIGH);
-
+  alarma->activarLED();
 	alarma->activarBuzzer();
+  alarma->enviarSMS("ALARMA INCENDIO ACTIVADA");
 }
 
 void SensorLlama::modoTest()
@@ -84,30 +90,29 @@ int SensorLlama::leer(){
   // map the sensor range (four options):
   // ex: 'long int map(long int, long int, long int, long int, long int)'
   int range = map(sensorReading, sensorMin, sensorMax, 0, 3);
-  return range;
+  // range value:
+  
+  switch (range) {
+  case 0:    // A fire closer than 1.5 feet away.
+    //Serial.println("** Close Fire **");
+   return 1;
+  case 1:    // A fire between 1-3 feet away.
+    //Serial.println("** Distant Fire **");
+    return 0;
+  case 2:    // No fire detected.
+    //Serial.println("No Fire");
+    return 0;
+  }
+  
+  return 0;
 };
 
 bool SensorLlama::hayFalla(){
   
   int range = this->leer();
 
-  bool falla = false;
-  // range value:
-  switch (range) {
-  case 0:    // A fire closer than 1.5 feet away.
-    //Serial.println("** Close Fire **");
-    falla = true;
-    break;
-  case 1:    // A fire between 1-3 feet away.
-    //Serial.println("** Distant Fire **");
-    falla = false;
-    break;
-  case 2:    // No fire detected.
-    //Serial.println("No Fire");
-    falla = false;
-    break;
-  }
-
+  bool falla = range == 1;
+  
   return falla;
 };
 
@@ -121,7 +126,7 @@ int DHT11::prev_humedad;
 void DHT11::modoNormal()
 {
   Serial.println("execute normal");
-  digitalWrite(led, HIGH);
+  alarma->activarLED();
   alarma->activarBuzzer();
 }
 
@@ -149,6 +154,7 @@ bool DHT11::hayFalla(){
 
 SensorTemperatura::SensorTemperatura(int _pinData, int _umbral, Alarm *_alarma):DHT11(_pinData, _umbral, _alarma){
   nombre = "Temperatura";
+  dweetCode = "S1";
 }
 
 //retorna -1 si no pudo medir
@@ -168,6 +174,7 @@ int SensorTemperatura::leer(){
 
 SensorHumedad::SensorHumedad(int _pinData, int _umbral, Alarm *_alarma):DHT11(_pinData, _umbral, _alarma){
   nombre = "Humedad";
+  dweetCode = "S2";
 }
 
 //retorna -1 si no pudo medir
@@ -189,14 +196,13 @@ int SensorHumedad::leer(){
 
 SensorPIR::SensorPIR(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData, _umbral, _alarma){
   nombre = "Movimiento";
+  dweetCode = "S3";
 }
 
 void SensorPIR::modoNormal()
 {
   Serial.println("execute normal");
-
-  digitalWrite(led, HIGH);
-
+  alarma->activarLED();
   alarma->activarBuzzer();
 }
 
@@ -225,8 +231,50 @@ bool SensorPIR::hayFalla(){
   
   int range = this->leer();
 
+  bool falla = range == 1;
+
+  return falla;
+};
+
+//Sensor CO2
+SensorCO2::SensorCO2(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData, _umbral, _alarma){
+  nombre = "Monoxido_Carbono";
+  dweetCode = "S4";
+}
+
+void SensorCO2::modoNormal()
+{
+  Serial.println("execute normal");
+  alarma->activarLED();
+  alarma->activarBuzzer();
+}
+
+void SensorCO2::modoTest()
+{
+
+}
+
+void SensorCO2::modoMant()
+{
+
+}
+
+
+int SensorCO2::leer(){
+  pinMode(pinData, INPUT);
+  int sensorReading = analogRead(pinData);
+  return sensorReading;
+};
+
+bool SensorCO2::hayFalla(){
+  
+  int range = this->leer();
+
   bool falla = false;
 
+  if (range > umbral)
+    falla = true;
+  
   return falla;
 };
 

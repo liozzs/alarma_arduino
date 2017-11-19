@@ -46,22 +46,18 @@ void loop() {
   
    while (Serial.available()) {
 
-     if (Serial.available() >0) {
+     if (Serial.available() > 0) {
        char c = Serial.read();
        msg_in += c;
-       Serial.print(c);}
      }
-      Serial.println(msg_in.length());
-
+   }
 
    if (msg_in.length() >= 128) {
      if (msg_in.startsWith("modo:", 0)) {
         modo_operacion = msg_in.substring(5);
-        Serial.println("WIFI: cambio modo a: " + modo_operacion);
+        debug("WIFI: cambio modo a: " + modo_operacion);
         msg_in = "";
      }
-
-     Serial.println(msg_in);
 
      if (msg_in.startsWith("dweet:", 0)) {
         debug(msg_in);
@@ -88,24 +84,30 @@ void loop() {
         debug("parseObject() failed");
         return;
       }
-      String control = root["with"][0]["content"].as<String>();
+      String control = "control:" + root["with"][0]["content"].as<String>();
       jsonBuffer.clear();
       debug("PREV :" + prev_get);
       debug("OUT :" + msg_out);
       if (msg_out != prev_get) {
         prev_get = msg_out;
-        Serial.println(control); //envia al arduino la lectura de dweet
+        sendToArduino(control); //envia al arduino la lectura de dweet
         debug("WIFI: procesando dweet get: " + msg_out);
       }
 
 }
 
-void debug(String str) {
+void sendToArduino(String str){
+  while(str.length() < 128){
+    str+='\0';
+  }
+  Serial.println(str);
+}
 
+void debug(String str) {
   if (modo_operacion == "TEST") 
-      Serial.println(str);
+     sendToArduino(str);
   else if (modo_operacion == "MANTENIMIENTO") 
-      Serial.println(str);
+     sendToArduino(str);
   else {
   }
 }
