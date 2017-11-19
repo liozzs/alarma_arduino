@@ -2,6 +2,10 @@
 //WIFI
 #include "conectividad.h"
 
+void iniciarComm(){
+  Serial2.println("AT+CREG=1");  
+}
+
 void sendToWIFI(String str){
   while(str.length() < 128){
     str+='\0';
@@ -38,11 +42,8 @@ String leerFromSIM900(){
        msg_in_sim += c;
      }
   }
-   Serial.println(msg_in_sim);
-  if (msg_in_sim.startsWith("+CMT", 0)) {
-          Serial.println(msg_in_sim.substring(4));
-   }
-   return "";
+  
+  return msg_in_sim;
 
 }
 

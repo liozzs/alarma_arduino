@@ -432,12 +432,13 @@ void Alarm::procesarAcciones()
   if (str != "") {
     StaticJsonBuffer<130> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(str);
-    if (root.containsKey("estado"))
+    if (root.containsKey("estado")){
       Serial.println(root["estado"].as<bool>());
       if ( root["estado"].as<bool>())
         this->activar();
       else
         this->desactivar();
+    }
     if (root.containsKey("reset")) {
         Serial.println("RESET");
         this->desactivar();
@@ -461,7 +462,17 @@ void Alarm::procesarAcciones()
  }
 
   //Procesa mensajes de SIM900 / SMS
-  leerFromSIM900();
+  str = leerFromSIM900();
+  if (str.indexOf("+CMT:") > 0) {
+       if(str.indexOf("ACK") > 0) {
+           this->ackExterno = true;
+       }else if(str.indexOf("RESET") > 0) {
+          this->desactivar();
+          this->activar();
+       }else if(str.indexOf("DESACTIVAR") > 0) {
+          this->desactivar();
+       }
+   }
 }
 
 void Alarm::log(String msg){

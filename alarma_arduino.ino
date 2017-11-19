@@ -8,20 +8,16 @@
 #include "conectividad.h"
 // Fin include
 
-
-
 Alarm *alarma;
 unsigned long tiempoAnterior = 0; 
-
 
 void setup() {
 	Serial.begin(115200);  //Monitor Serial
   Serial1.begin(115200); //Comunicacion con ESP8266
   Serial2.begin(115200); //Comunicacion con SIM900
 
-
-  Serial2.println("AT+CREG=1");
-    
+  iniciarComm();
+  
 	alarma = new Alarm();
 
 	// Agregamos sensores de forma manual
@@ -31,19 +27,13 @@ void setup() {
   alarma->addSensor(new SensorPIR(PIN_SENSOR_PIR, 50, alarma));
   alarma->addSensor(new SensorCO2(PIN_SENSOR_CO2, 250, alarma));
 
-
   delay(3000); //delay para que inicialice el WIFI
   //sendToWIFI2("modo:TEST");
  
 }
 
- String readString = "";
-
 void loop() {
 
-  //while (Serial1.available())
-   // Serial.write(Serial1.read());
-    
   //leer mensajes de control desde dashboard
   alarma->procesarAcciones();
   
@@ -52,8 +42,8 @@ void loop() {
 
 	//Verificar estados sensores
 	alarma->verificarSensores();
-  
 
+  //Actualizar dashboard cada X seg
   if(millis()>tiempoAnterior + PERIODO_DWEET){ 
     //Serial.println("Enviando estado a Dweet");
     alarma->enviarEstado();
