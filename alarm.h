@@ -54,6 +54,8 @@ class Alarm{
     bool envioSMS;
     Menu *menu;
     String numero_cel = "";
+    int refresh_dweet = 5000;  //milisegundos
+    unsigned long tiempoAnterior = 0; 
 
    
    public: 
@@ -75,7 +77,9 @@ class Alarm{
     void enviarSMS(String msg);
     void procesarAcciones();
     void reset();
-    void log(String msg);
+    void actualizarDashboard();
+    void testEstado();
+    void logEvento(String evento, String msg="");
 };
 
 

@@ -9,7 +9,6 @@
 // Fin include
 
 Alarm *alarma;
-unsigned long tiempoAnterior = 0; 
 
 void setup() {
 	Serial.begin(115200);  //Monitor Serial
@@ -25,10 +24,9 @@ void setup() {
   alarma->addSensor(new SensorTemperatura(PIN_SENSOR_TEMPERATURA, 40, alarma));
   alarma->addSensor(new SensorHumedad(PIN_SENSOR_TEMPERATURA, 80, alarma));
   alarma->addSensor(new SensorPIR(PIN_SENSOR_PIR, 50, alarma));
-  alarma->addSensor(new SensorCO2(PIN_SENSOR_CO2, 250, alarma));
+  alarma->addSensor(new SensorCO2(PIN_SENSOR_CO, 250, alarma));
 
   delay(3000); //delay para que inicialice el WIFI
-  //sendToWIFI2("modo:TEST");
  
 }
 
@@ -43,13 +41,11 @@ void loop() {
 	//Verificar estados sensores
 	alarma->verificarSensores();
 
-  //Actualizar dashboard cada X seg
-  if(millis()>tiempoAnterior + PERIODO_DWEET){ 
-    //Serial.println("Enviando estado a Dweet");
-    alarma->enviarEstado();
-    tiempoAnterior=millis();  
-  }
-	
+  alarma->actualizarDashboard();
+
+  //modo test
+  alarma->testEstado();
+ 
 	delay(200);
 }
 

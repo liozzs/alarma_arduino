@@ -3,11 +3,10 @@
 
 #include "arduino.h"
 
-const int PERIODO_DWEET = 5000;  // 1 minuto
-
 void iniciarComm();
 void sendToWIFI(String str);
 String leerFromWIFI();
+void sendToSIM(String str);
 String leerFromSIM900();
 
 

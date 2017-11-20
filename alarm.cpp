@@ -46,15 +46,34 @@ int Alarm::getMode()
 void Alarm::setMode(int _mode)
 {
   this->modoOperacion = _mode;
+  switch (_mode) {
+    case MODO_NORMAL: {
+      Serial.println("MODO ALARMA: NORMAL");
+      sendToWIFI("modo:NORMAL");
+      break;
+    }
+    case MODO_TEST: {
+      Serial.println("MODO ALARMA: TEST");
+       sendToWIFI("modo:TEST");
+      break;
+    }
+    case MODO_MANT: {
+      Serial.println("MODO ALARMA: MANTENIMIENTO");
+      sendToWIFI("modo:MANTENIMIENTO");
+      break;
+    }
+  }
 }
 
 void Alarm::activar()
 {
+  logEvento("Alarma", "Activando");
   this->estado = EST_ACTIVA;
 }
 
 void Alarm::desactivar()
 {
+  logEvento("Alarma", "Desactivando");
   this->estado = EST_DESACT;
   this->estado_ack = false;
   this->estado_falla = false;
@@ -64,6 +83,7 @@ void Alarm::desactivar()
 }
 
 void Alarm::reset(){
+  logEvento("Alarma", "RESET");
   desactivar();
   activar();
 }
@@ -135,7 +155,6 @@ void Alarm::activarBuzzer()
 
 void Alarm::desactivarBuzzer()
 {
-  Serial.println("desactivar");
 	noTone(BUZZER);
 }
 
@@ -159,40 +178,41 @@ void Alarm::enviarEstado()
  
   Sensor *sensor;
   int lectura;
- 
-  //Recorrer lista de sensores
-  for(int i = 0; i < sensores.size(); i++) {
-    sensor = sensores.get(i); //Obtener sensor de la lista
-    int lectura = sensor->leer();
-    bool falla = sensor->hayFalla();
-    Serial.println(sensor->nombre + ": " + String(lectura));
-    root[sensor->dweetCode] = String(lectura);
-    //root["falla" + sensor->nombre] = String(falla);
+
+  //solo se envia la lectura de sensores si esta activada.
+  if (this->getEnable() && this->estado != EST_DESACT){
+    //Recorrer lista de sensores
+    for(int i = 0; i < sensores.size(); i++) {
+      sensor = sensores.get(i); //Obtener sensor de la lista
+      int lectura = sensor->leer();
+      bool falla = sensor->hayFalla();
+      root[sensor->dweetCode] = String(lectura);
+      logEvento("Lectura SENSOR", sensor->nombre + ": " + String(lectura));
+    }
   }
+
+  //el estado general se envia siempre.
   root["E"] = String(estado);
   root["A"] = String(estado_ack);
   root["M"] = String(modoOperacion);
   root["EF"] = String(estado_falla);
-
   
   String output;
   String fullOutput;
   root.printTo(output);
-
-  //Serial1 es donde se conecta el WIFI
-  delay(100);
-
+  
   fullOutput = "dweet:frba-ssee-alarma," + output;
-  Serial.println(fullOutput);
+  logEvento("Enviado a WIFI", fullOutput);
   sendToWIFI(fullOutput);
 }
 
 void Alarm::enviarSMS(String msg){
 
   if (this->numero_cel == "") {
-    Serial.println("NO HAY NUMERO");
+    logEvento("SIM900",  "NO HAY NUMERO - ingresar via dashboard");
   }
   else {
+    logEvento("SIM: Enviando SMS: " + this->numero_cel);
     Serial2.println("AT+CMGF=1\r");
     delay(100); 
     Serial2.println("AT+CMGS=\"+549" + numero_cel + "\""); // send the SMS number
@@ -202,7 +222,6 @@ void Alarm::enviarSMS(String msg){
     Serial2.write(0x1A);
   }
 }
-
 
 Menu::Menu(Alarm *_alarm) {
 
@@ -429,7 +448,9 @@ void Alarm::procesarAcciones()
   
   //Procesa mensajes de WIFI / Dashboard
   String str = leerFromWIFI();
-  if (str != "") {
+  logEvento("Recibido de WIFI", str);
+  
+  if (!str.startsWith("debug:", 0)) {
     StaticJsonBuffer<130> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(str);
     if (root.containsKey("estado")){
@@ -448,21 +469,39 @@ void Alarm::procesarAcciones()
       this->ackExterno = true;
     else if (root.containsKey("num_cel")) {
       this->numero_cel = root["num_cel"].as<String>();
-      Serial.println(this->numero_cel);
     }
     else if (root.containsKey("m")) 
-      this->modoOperacion = root["m"].as<int>();
-    
-    else if (root.containsKey("test_led"))
-    ;
+      this->setMode(root["m"].as<int>());
+    else if (root.containsKey("test_refresh"))
+      this->refresh_dweet = root["test_refresh"].as<int>();
     else if (root.containsKey("test_buzzer"))
-    ;
+      if (root["test_buzzer"].as<bool>())
+        this->activarBuzzer();
+      else
+        this->desactivarBuzzer();
+    else if (root.containsKey("test_led"))
+      if (root["test_led"].as<bool>())
+        this->activarLED();
+      else
+        this->desactivarLED();
     else if (root.containsKey("test_sms"))
-    ;
+        this->enviarSMS(root["test_sms"].as<String>());
+    else if (root.containsKey("test_reset_wifi")) {
+        logEvento("Reiniciando WIFI");
+        sendToWIFI("test:RESET");
+    }
+    else if (root.containsKey("test_reset_sim")) {
+        logEvento("Reiniciando SIM");
+        sendToSIM("AT+CFUN=1,1");
+        delay(100);
+        Serial2.begin(115200);
+        iniciarComm();
+    }
  }
 
   //Procesa mensajes de SIM900 / SMS
   str = leerFromSIM900();
+  logEvento("Recibido de SIM", str);
   if (str.indexOf("+CMT:") > 0) {
        if(str.indexOf("ACK") > 0) {
            this->ackExterno = true;
@@ -475,7 +514,39 @@ void Alarm::procesarAcciones()
    }
 }
 
-void Alarm::log(String msg){
-//Dependiendo del MODO, loguear o no en consola
+
+void Alarm::actualizarDashboard(){
+  //Actualizar dashboard cada X seg
+  if(millis() > tiempoAnterior + refresh_dweet){ 
+    logEvento("Actualizando dashboard");
+    this->enviarEstado();
+    tiempoAnterior=millis();  
+  }
+}
+
+void Alarm::testEstado(){
+  if (!this->modoOperacion == MODO_TEST)
+    return;
+
+  //SIM900
+  
+}
+
+void Alarm::logEvento(String evento, String msg=""){
+//Dependiendo del MODO, uear o no en consola
+  if (msg.length() > 2){
+    switch (this->modoOperacion) {
+      case MODO_NORMAL: {
+        break;
+      }
+      case MODO_TEST: {
+        break;
+      }
+      case MODO_MANT: {
+        Serial.println(evento + ": " + msg);
+        break;
+      }
+    }
+  }
 }
 

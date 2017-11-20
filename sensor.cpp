@@ -16,14 +16,17 @@ void Sensor::executeNormal()
 	switch (alarma->getMode()) {
 
 	case MODO_NORMAL:
+    alarma->logEvento("Sensor execute normal" , this->nombre);
 		this->modoNormal();
 		break;
 
 	case MODO_TEST:
+    alarma->logEvento("Sensor execute TEST", this->nombre);
 		this->modoTest();
 		break;
 
 	case MODO_MANT:
+    alarma->logEvento("Sensor execute MANT" , this->nombre);
 		this->modoMant();
 		break;
 	}
@@ -32,6 +35,7 @@ void Sensor::executeNormal()
 
 void Sensor::executeBlink()
 {    
+    alarma->logEvento("Sensor Blink", this->nombre);
     if (!alarma->fallaGlobal) { 
   	  // blinking sin usar delay
       if (millis() >> 9 & 1)
@@ -43,8 +47,8 @@ void Sensor::executeBlink()
 
 void Sensor::executeDesactivar()
 {
-	//Serial.println("execute desactivar");
  if (!desactivado) {
+    alarma->logEvento("Sensor Desactivar" , this->nombre);
 	  alarma->desactivarLED();
 	  alarma->desactivarBuzzer();
     desactivado = true;
@@ -53,7 +57,7 @@ void Sensor::executeDesactivar()
 
 void Sensor::executeAck()
 {
-	Serial.println("execute ack");
+	alarma->logEvento("Sensor ACK" , this->nombre);
 	alarma->desactivarBuzzer();
 }
 
@@ -64,7 +68,6 @@ SensorLlama::SensorLlama(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinD
 
 void SensorLlama::modoNormal()
 {
-	Serial.println("execute normal");
   alarma->activarLED();
 	alarma->activarBuzzer();
   alarma->enviarSMS("ALARMA INCENDIO ACTIVADA");
@@ -72,12 +75,12 @@ void SensorLlama::modoNormal()
 
 void SensorLlama::modoTest()
 {
-
+  
 }
 
 void SensorLlama::modoMant()
 {
-
+  alarma->activarLED();
 }
 
 //en este caso retorna 1 si hay fuego cerca o distante, 0 si no hay
@@ -125,7 +128,6 @@ int DHT11::prev_humedad;
 
 void DHT11::modoNormal()
 {
-  Serial.println("execute normal");
   alarma->activarLED();
   alarma->activarBuzzer();
 }
@@ -201,9 +203,9 @@ SensorPIR::SensorPIR(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData,
 
 void SensorPIR::modoNormal()
 {
-  Serial.println("execute normal");
   alarma->activarLED();
   alarma->activarBuzzer();
+  alarma->enviarSMS("ALARMA MOVIMIENTO ACTIVADA");
 }
 
 void SensorPIR::modoTest()
@@ -244,9 +246,9 @@ SensorCO2::SensorCO2(int _pinData, int _umbral, Alarm *_alarma):Sensor(_pinData,
 
 void SensorCO2::modoNormal()
 {
-  Serial.println("execute normal");
   alarma->activarLED();
   alarma->activarBuzzer();
+  alarma->enviarSMS("ALARMA MONOXIDO ACTIVADA");
 }
 
 void SensorCO2::modoTest()

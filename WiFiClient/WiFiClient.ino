@@ -39,29 +39,44 @@ void setup() {
   //if you get here you have connected to the WiFi
   Serial.println("WIFI: connected...:)");
 }
- String readString = "";
 
 void loop() {
-  unsigned long currentMillis = millis();
   
    while (Serial.available()) {
-
      if (Serial.available() > 0) {
        char c = Serial.read();
        msg_in += c;
      }
    }
-
+   debug("WIFI: msg de arduino length: " + String(msg_in.length()));
    if (msg_in.length() >= 128) {
-     if (msg_in.startsWith("modo:", 0)) {
-        modo_operacion = msg_in.substring(5);
-        debug("WIFI: cambio modo a: " + modo_operacion);
-        msg_in = "";
+     if (msg_in.indexOf("modo:TEST") > 0) {
+        modo_operacion = "TEST";
+        debug("WIFI: cambio modo a TEST");
+     } else if (msg_in.indexOf("modo:MANTENIMIENTO") > 0) {
+        modo_operacion = "MANTENIMIENTO";
+        debug("WIFI: cambio modo a MANTENIMIENTO");
+     } else if (msg_in.indexOf("modo:NORMAL") > 0) {
+        modo_operacion = "NORMAL";
+        debug("WIFI: cambio modo a NORMAL");
+     }
+
+     if (msg_in.indexOf("test:estado_WIFI") > 0) {    
+        if (WiFi.status() != WL_CONNECTED){
+           debug("WIFI ERROR");
+        } else {
+           debug("WIFI OK");
+        }
+     }
+
+     if (msg_in.indexOf("test:RESET") > 0) {    
+        debug("WIFI: reiniciando");
+        ESP.reset();
+        delay(5000);
+        return;
      }
 
      if (msg_in.startsWith("dweet:", 0)) {
-        debug(msg_in);
-  
         String thing, contents;
         for (int i = 0; i < msg_in.length(); i++) {
           if (msg_in.substring(i, i+1) == ",") {
@@ -86,13 +101,19 @@ void loop() {
       }
       String control = "control:" + root["with"][0]["content"].as<String>();
       jsonBuffer.clear();
-      debug("PREV :" + prev_get);
-      debug("OUT :" + msg_out);
       if (msg_out != prev_get) {
         prev_get = msg_out;
         sendToArduino(control); //envia al arduino la lectura de dweet
-        debug("WIFI: procesando dweet get: " + msg_out);
+        debug("WIFI: dweet get: " + msg_out);
+      } else {
+        debug("WIFI: no hay comando nuevo");
       }
+
+    if (WiFi.status() != WL_CONNECTED){
+        debug("WIFI DESCONECTADO");
+        ESP.reset();
+        delay(5000);
+    }
 
 }
 
@@ -105,10 +126,11 @@ void sendToArduino(String str){
 
 void debug(String str) {
   if (modo_operacion == "TEST") 
-     sendToArduino(str);
+     sendToArduino("test:" + str);
   else if (modo_operacion == "MANTENIMIENTO") 
      sendToArduino(str);
   else {
+
   }
 }
 

@@ -6,6 +6,10 @@ void iniciarComm(){
   Serial2.println("AT+CREG=1");  
 }
 
+void sendToSIM(String str){
+  Serial2.println(str);
+}
+
 void sendToWIFI(String str){
   while(str.length() < 128){
     str+='\0';
@@ -25,9 +29,12 @@ String leerFromWIFI(){
   }
 
    if (msg_in_wifi.length() >= 128) {
-
+  
       if (msg_in_wifi.startsWith("control:", 0)) {
         return msg_in_wifi.substring(8);
+      }
+      else {
+        return "debug:" + msg_in_wifi;
       }
    }
    return "";
