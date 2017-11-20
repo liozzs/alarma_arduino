@@ -14,7 +14,7 @@ Alarm::Alarm(){
 	pinMode(LED, OUTPUT);
 	pinMode(BUZZER, OUTPUT);
 
-	this->modoOperacion = MODO_NORMAL;
+	this->setMode(MODO_NORMAL);
   this->estado = EST_ACTIVA;
 
   menu = new Menu(this);
@@ -179,8 +179,8 @@ void Alarm::enviarEstado()
   Sensor *sensor;
   int lectura;
 
-  //solo se envia la lectura de sensores si esta activada.
-  if (this->getEnable() && this->estado != EST_DESACT){
+  //solo se envia la lectura de sensores si esta activada y no es test
+  if (this->getEnable() && this->estado != EST_DESACT && this->modoOperacion != MODO_TEST){
     //Recorrer lista de sensores
     for(int i = 0; i < sensores.size(); i++) {
       sensor = sensores.get(i); //Obtener sensor de la lista
@@ -448,20 +448,24 @@ void Alarm::procesarAcciones()
   
   //Procesa mensajes de WIFI / Dashboard
   String str = leerFromWIFI();
+
   logEvento("Recibido de WIFI", str);
   
-  if (!str.startsWith("debug:", 0)) {
+  if (str != "" && !str.startsWith("debug:", 0)) {
     StaticJsonBuffer<130> jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(str);
+    if (!root.success()) {
+      logEvento("parseObject() failed");
+
+    }
+    logEvento("Ejecutando control de dashboard: ", str);
     if (root.containsKey("estado")){
-      Serial.println(root["estado"].as<bool>());
       if ( root["estado"].as<bool>())
         this->activar();
       else
         this->desactivar();
     }
     if (root.containsKey("reset")) {
-        Serial.println("RESET");
         this->desactivar();
         this->activar();
      }
@@ -470,8 +474,9 @@ void Alarm::procesarAcciones()
     else if (root.containsKey("num_cel")) {
       this->numero_cel = root["num_cel"].as<String>();
     }
-    else if (root.containsKey("m")) 
+    else if (root.containsKey("m")) {
       this->setMode(root["m"].as<int>());
+    }
     else if (root.containsKey("test_refresh"))
       this->refresh_dweet = root["test_refresh"].as<int>();
     else if (root.containsKey("test_buzzer"))
@@ -496,6 +501,9 @@ void Alarm::procesarAcciones()
         delay(100);
         Serial2.begin(115200);
         iniciarComm();
+    }
+    else if (root.containsKey("test_conf_portal")) {
+        sendToWIFI("test:conf_portal");
     }
  }
 
@@ -525,11 +533,59 @@ void Alarm::actualizarDashboard(){
 }
 
 void Alarm::testEstado(){
-  if (!this->modoOperacion == MODO_TEST)
+  if (this->modoOperacion != MODO_TEST)
     return;
+
+  //desactivar salidas
+  this->desactivarLED();
+  this->desactivarBuzzer();
+  
+  delay(4000);
+  Serial.println("Iniciando test...");
+  delay(4000);
+
+  //BUZZER
+  Serial.print("Test buzzer...");
+  this->activarBuzzer();
+  delay(2000);
+  this->desactivarBuzzer();
+  Serial.println("OK");
+
+  //LED
+  Serial.print("Test LED...");
+  this->activarLED();
+  delay(2000);
+  this->desactivarLED();
+  Serial.println("OK");
+
+  //Sensores
+  Sensor *sensor;
+  for(int i = 0; i < sensores.size(); i++) {
+    sensor = sensores.get(i); //Obtener sensor de la lista
+    Serial.print("Test " + sensor->nombre + "...");
+    if (sensor->leer() != -1)
+      Serial.println("OK");
+
+    delay(2000);   
+  }
 
   //SIM900
   
+  //WIFI
+  Serial.print("Test WIFI...");
+  //vacio el buffer pendiendte
+  while (Serial1.available()) Serial1.read();
+  sendToWIFI("test:test_estado");
+  delay(2000);
+  String msg = leerFromWIFI();
+  if (msg.startsWith("debug:WIFI:ack_test:3")){
+    Serial.println("OK");
+  } else {
+    Serial.println("ERROR");
+  }
+
+  Serial.println("\n\nTest finalizado\n\n");
+  delay(10000);
 }
 
 void Alarm::logEvento(String evento, String msg=""){

@@ -49,19 +49,26 @@ void loop() {
      }
    }
    debug("WIFI: msg de arduino length: " + String(msg_in.length()));
-   if (msg_in.length() >= 128) {
-     if (msg_in.indexOf("modo:TEST") > 0) {
+   
+    if (msg_in.length() >= 128) {
+     if (msg_in == "test:test_estado") {    
+        sendToArduino("WIFI:ack_test:" + String(WiFi.status()));
+        msg_in = "";
+        return;
+     }
+     
+     if (msg_in == "modo:TEST") {
         modo_operacion = "TEST";
         debug("WIFI: cambio modo a TEST");
-     } else if (msg_in.indexOf("modo:MANTENIMIENTO") > 0) {
+     } else if (msg_in == "modo:MANTENIMIENTO") {
         modo_operacion = "MANTENIMIENTO";
         debug("WIFI: cambio modo a MANTENIMIENTO");
-     } else if (msg_in.indexOf("modo:NORMAL") > 0) {
+     } else if (msg_in == "modo:NORMAL") {
         modo_operacion = "NORMAL";
         debug("WIFI: cambio modo a NORMAL");
      }
 
-     if (msg_in.indexOf("test:estado_WIFI") > 0) {    
+     if (msg_in == "test:estado_WIFI") {    
         if (WiFi.status() != WL_CONNECTED){
            debug("WIFI ERROR");
         } else {
@@ -69,7 +76,20 @@ void loop() {
         }
      }
 
-     if (msg_in.indexOf("test:RESET") > 0) {    
+     if (msg_in == "test:conf_portal") {    
+        debug("WIFI: iniciando portal de configuracion");
+        WiFiManager wifiManager;
+        if (!wifiManager.startConfigPortal("OnDemandAP")) {
+          debug("WIFI: failed to connect and hit timeout");
+          delay(3000);
+          ESP.reset();
+          delay(5000);
+        } else {
+           debug("WIFI: connected...");
+        }
+     }
+
+     if (msg_in == "test:RESET") {    
         debug("WIFI: reiniciando");
         ESP.reset();
         delay(5000);
@@ -104,7 +124,6 @@ void loop() {
       if (msg_out != prev_get) {
         prev_get = msg_out;
         sendToArduino(control); //envia al arduino la lectura de dweet
-        debug("WIFI: dweet get: " + msg_out);
       } else {
         debug("WIFI: no hay comando nuevo");
       }
@@ -121,12 +140,13 @@ void sendToArduino(String str){
   while(str.length() < 128){
     str+='\0';
   }
+  str = str.substring(0,128);
   Serial.println(str);
 }
 
 void debug(String str) {
-  if (modo_operacion == "TEST") 
-     sendToArduino("test:" + str);
+  if (modo_operacion == "TEST") {
+  }
   else if (modo_operacion == "MANTENIMIENTO") 
      sendToArduino(str);
   else {

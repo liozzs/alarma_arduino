@@ -3,6 +3,7 @@
 #include "conectividad.h"
 
 void iniciarComm(){
+  sendToWIFI("test:RESET");
   Serial2.println("AT+CREG=1");  
 }
 
@@ -18,22 +19,24 @@ void sendToWIFI(String str){
 }
 
 String leerFromWIFI(){
-    
-  String msg_in_wifi = "";
   
-  while (Serial1.available()) {
+  String msg_in_wifi = "";
+  //Serial.println("INIT: " + String(msg_in_wifi.length()));
+  while (Serial1.available() && (msg_in_wifi.length() <= 129)) {
      if (Serial1.available() >0) {
        char c = Serial1.read();
        msg_in_wifi += c;
       }
   }
-
-   if (msg_in_wifi.length() >= 128) {
+  // Serial.println("LENGTH:" + String(msg_in_wifi.length()));
+   if (msg_in_wifi != "") {
   
       if (msg_in_wifi.startsWith("control:", 0)) {
+      //  Serial.println("TIENE CONTROL");
         return msg_in_wifi.substring(8);
       }
       else {
+       // Serial.println("SIN CONTROL");
         return "debug:" + msg_in_wifi;
       }
    }
