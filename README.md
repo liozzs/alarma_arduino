@@ -9,6 +9,6 @@ Para compilar el programa se debe desarcargar las librerias:
 - SimpleDHT11
 
 Dashboard:
-1) https://freeboard.io/board/lfsCLZ
-2) Importar el dashboard.json (incluido aca) ya que no queda guardado.
+1) https://freeboard.io/board/OxkHr-
+
 
