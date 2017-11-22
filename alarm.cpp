@@ -6,7 +6,24 @@
  //StaticJsonBuffer<300> jsonBuffer;
  
 Alarm::Alarm(){
-	   
+	int eeAddress = 0;
+
+	//Cargar datos guardados
+	EEPROM.get(eeAddress, configData);
+
+	if (configData.valid != 100) {
+
+		configData = {
+			{ '1','2','5','6' },
+			"",
+			100
+		};
+
+		EEPROM.put(eeAddress, configData);
+	}
+	else
+		numero_cel = configData.tel;
+
 	//SET pin modes
 	pinMode(PIN_ENABLE, INPUT);
 	pinMode(PIN_ACK, INPUT);
@@ -15,9 +32,9 @@ Alarm::Alarm(){
 	pinMode(BUZZER, OUTPUT);
 
 	this->setMode(MODO_NORMAL);
-  this->estado = EST_ACTIVA;
+	this->estado = EST_ACTIVA;
 
-  menu = new Menu(this);
+	menu = new Menu(this);
 
 }
 
@@ -28,10 +45,20 @@ void Alarm::mostrarMenu()
   menu->printMenu();
 }
 
+void Alarm::actualizarClave(char * _clave)
+{
+	for (int i = 0; i < 4; i++)
+		configData.clave[i] = _clave[i];
+
+//	memcpy(&configData.clave, &_clave, sizeof _clave);
+	
+	EEPROM.put(0, configData);
+}
+
 bool Alarm::getEnable()
 {
 	int enable = digitalRead(PIN_ENABLE);
-	
+
 	if (enable == HIGH)
 		return true;
 	else
@@ -41,6 +68,11 @@ bool Alarm::getEnable()
 int Alarm::getMode()
 {
 	return modoOperacion;
+}
+
+int Alarm::getEstado()
+{
+	return estado;
 }
 
 void Alarm::setMode(int _mode)
@@ -230,7 +262,6 @@ Menu::Menu(Alarm *_alarm) {
   lcd->createChar(1, flechaAbajoChar);
   lcd->begin(16, 2);              
   lcd->setCursor(0, 0);       
-  lcd->blink();
 
   //Inicializacion KEY PAD
   keyPad = new Keypad(makeKeymap(hexaKeys), rowPins, colPins, TECLADO_ROWS, TECLADO_COLS);
@@ -261,8 +292,46 @@ void Menu::printMenu() {
   lcdButton = this->readLCDButtons();
 
   switch (level) {
+  case -1:
+	  if (lcdButton == btnSELECT) {
+		level = 0;
+		lcd->blink();
+		return;
+	  }
+	  
+	  lcd->noBlink();
+
+	  //Imprime ESTADO
+	  lcd->setCursor(0, 0);
+	  lcd->print("ESTADO:              ");
+	  lcd->setCursor(8, 0);
+	  if (alarma->getEstado() == EST_ACTIVA)
+		  lcd->print("ACTIVA");
+	  else
+		  lcd->print("INACTIVA");
+
+	  lcd->setCursor(0, 1);
+	  lcd->print("MODO:                ");
+	  lcd->setCursor(6,1);
+
+	  //Imprime MODO
+	  switch (alarma->getMode()) {
+	  case MODO_NORMAL:
+		  lcd->print("NORMAL");
+		  break;
+	  case MODO_TEST:
+		  lcd->print("TEST");
+		  break;
+	  case MODO_MANT:
+		  lcd->print("MANT.");
+		  break;
+	  default:
+		  break;
+	  }
+	  break;
 
     case 0: //LEVEL 0
+
       if (lcdButton == btnDOWN && pos < 4)
         pos++;
 
@@ -271,6 +340,9 @@ void Menu::printMenu() {
 
       if (lcdButton == btnSELECT)
         level = pos;
+
+	  if (lcdButton == btnLEFT)
+		  level = -1;
 
       if (pos == 1 || pos == 2) {
         lcd->setCursor(0, 0);
@@ -284,7 +356,7 @@ void Menu::printMenu() {
         lcd->setCursor(0, 0);
         lcd->print(">CAMBIAR MODO      ");  //LEVEL 3
         lcd->setCursor(0, 1);
-        lcd->print(">AGREGAR SENSOR    ");  //LEVEL 4
+        lcd->print(">CAMBIAR CLAVE     ");  //LEVEL 4
         lcd->setCursor(0, pos - 3);
       }
       break;
@@ -300,8 +372,21 @@ void Menu::printMenu() {
     case 3: //LEVEL 3 - CAMBIAR MODO
       this->cambiarModo();
       break;
+
+	case 4: //LEVEL 4 - CAMBIAR CLAVE
+	  this->ingresaCodigo(CAMBIO_CLAVE);
+	  break;
+
+	case 100: //SUBNIVEL 1 - INGRESA NUEVA CLAVE
+	  this->ingresaCodigo(NUEVA_CLAVE);
+	  break;
   }
 
+}
+
+LiquidCrystal * Menu::getLCD()
+{
+	return lcd;
 }
 
 void Menu::ingresaCodigo(int _evento)
@@ -314,7 +399,12 @@ void Menu::ingresaCodigo(int _evento)
 
   if (firstTime) {
     lcd->setCursor(0, 0);
-    lcd->print("INGRESAR CODIGO        ");
+
+	if (_evento == CAMBIO_CLAVE)
+		lcd->print("INGRESAR ACTUAL        ");
+	else
+		lcd->print("INGRESAR CODIGO        ");
+
     lcd->setCursor(0, 1);
     lcd->print(">                      ");
     lcd->setCursor(1, 1);
@@ -339,12 +429,35 @@ void Menu::ingresaCodigo(int _evento)
         timeOn = true;
       }
 
-      if (this->verificarCodigo(attempt)) {
+	  if (_evento == NUEVA_CLAVE) {
+		  alarma->actualizarClave(attempt);
+
+		  lcd->setCursor(0, 0);
+		  lcd->print("->ACTUALIZADA    ");
+
+		  if (millis() - prevMillis >= 2000) {  //Mostramos el mensaje por 2 segundos
+			  firstTime = true;
+			  timeOn = false;
+			  level = 0;              //Vuelve al menu anterior
+		  }
+		  return;
+	  }
+
+      if (_evento != NUEVA_CLAVE && alarma->verificarCodigo(attempt)) {
         lcd->setCursor(0, 0);
-        if(_evento == ACTIVAR)
-          lcd->print("ALARMA -> ACTIVADA     ");
-        else
-          lcd->print("ALARMA -> DESACTIVADA  ");
+		switch (_evento) {
+		case ACTIVAR:
+			lcd->print("ALARMA -> ACTIVADA     ");
+			break;
+		case DESACTIVAR:
+			lcd->print("ALARMA -> DESACTIVADA  ");
+			break;
+		case CAMBIO_CLAVE:
+			firstTime = true;
+			timeOn = false;
+			level = 100;		//Nos vamos a un subnivel
+			break;
+		}
 
         lcd->setCursor(0, 1);
         lcd->print("                       ");
@@ -362,7 +475,7 @@ void Menu::ingresaCodigo(int _evento)
       }
       else {
         lcd->setCursor(0, 0);
-        lcd->print("CODIGO  INCORRECTO     ");
+        lcd->print("CODIGO INVALIDO     ");
         lcd->setCursor(0, 1);
         lcd->print("                       ");
 
@@ -376,13 +489,13 @@ void Menu::ingresaCodigo(int _evento)
   }
 }
 
-bool Menu::verificarCodigo(char * _attempt)
+bool Alarm::verificarCodigo(char * _attempt)
 {
   int correct = 0;
 
   for (int i = 0; i<4; i++)
   {
-    if (_attempt[i] == CODE[i])
+    if (_attempt[i] == configData.clave[i])
       correct++;
   }
 
@@ -533,46 +646,81 @@ void Alarm::actualizarDashboard(){
 }
 
 void Alarm::testEstado(){
-  if (this->modoOperacion != MODO_TEST)
+
+	LiquidCrystal *lcd = menu->getLCD();
+
+  if (this->modoOperacion != MODO_TEST || millis() < prevTimeTestMode + refresh_test)
     return;
 
   //desactivar salidas
   this->desactivarLED();
   this->desactivarBuzzer();
   
-  delay(4000);
+  //delay(4000);
   Serial.println("Iniciando test...");
+  lcd->setCursor(0, 0);
+  lcd->print("Iniciando test..");
+  lcd->setCursor(0, 1);
+  lcd->print("                ");
   delay(4000);
 
   //BUZZER
   Serial.print("Test buzzer...");
+  lcd->setCursor(0, 0);
+  lcd->print("Test buzzer.....");
   this->activarBuzzer();
   delay(2000);
   this->desactivarBuzzer();
   Serial.println("OK");
+  lcd->setCursor(0, 1);
+  lcd->print("OK              ");
+  delay(1000);
+  lcd->setCursor(0, 1);
+  lcd->print("                ");
 
   //LED
   Serial.print("Test LED...");
+  lcd->setCursor(0, 0);
+  lcd->print("Test LED........");
   this->activarLED();
   delay(2000);
   this->desactivarLED();
   Serial.println("OK");
+  lcd->setCursor(0, 1);
+  lcd->print("OK              ");
+  delay(1000);
+  lcd->setCursor(0, 1);
+  lcd->print("                ");
 
   //Sensores
   Sensor *sensor;
   for(int i = 0; i < sensores.size(); i++) {
     sensor = sensores.get(i); //Obtener sensor de la lista
     Serial.print("Test " + sensor->nombre + "...");
-    if (sensor->leer() != -1)
-      Serial.println("OK");
+	lcd->setCursor(0, 0);
+	lcd->print("Test " + sensor->nombre + "............");
+	lcd->setCursor(0, 1);
+	lcd->print("                ");
+	delay(1000);
+	if (sensor->leer() != -1) {
+		Serial.println("OK");
+		lcd->setCursor(0, 1);
+		lcd->print("OK              ");
+	}
 
-    delay(2000);   
+    delay(1000);
   }
+
+  //Limpia valor anterior
+  lcd->setCursor(0, 1);
+  lcd->print("                ");
 
   //SIM900
   
   //WIFI
   Serial.print("Test WIFI...");
+  lcd->setCursor(0, 0);
+  lcd->print("Test WIFI.......");
   //vacio el buffer pendiendte
   while (Serial1.available()) Serial1.read();
   sendToWIFI("test:test_estado");
@@ -580,12 +728,23 @@ void Alarm::testEstado(){
   String msg = leerFromWIFI();
   if (msg.startsWith("debug:WIFI:ack_test:3")){
     Serial.println("OK");
+	lcd->setCursor(0, 1);
+	lcd->print("OK              ");
   } else {
     Serial.println("ERROR");
+	lcd->setCursor(0, 1);
+	lcd->print("ERROR           ");
   }
 
+  delay(1000);
+  lcd->setCursor(0, 1);
+  lcd->print("                ");
   Serial.println("\n\nTest finalizado\n\n");
-  delay(10000);
+
+  lcd->setCursor(0, 0);
+  lcd->print("Test finalizado ");
+  delay(1000);
+  prevTimeTestMode = millis();
 }
 
 void Alarm::logEvento(String evento, String msg=""){

@@ -7,6 +7,7 @@
 #include <LiquidCrystal.h>
 #include <LinkedList.h>
 #include <Keypad.h>
+#include <EEPROM.h>
 
 //Modos de operacion
 #define MODO_NORMAL 1
@@ -29,8 +30,10 @@
 #define btnEMPTY  99
 
 //MENU
-#define ACTIVAR	   1
-#define DESACTIVAR 2
+#define ACTIVAR	     1
+#define DESACTIVAR   2
+#define CAMBIO_CLAVE 3
+#define NUEVA_CLAVE  4
 
 class Sensor;
 
@@ -39,7 +42,14 @@ class Menu;
 class Alarm{
 
    protected:
+	struct configStruct {
+		char clave[4];
+		String tel;
+		int valid;
+	};
+
     int modoOperacion;
+	configStruct configData;
     LiquidCrystal *lcd;
     int estado;
     bool ack = false; // hubo algun ack sobre la falla?
@@ -47,7 +57,7 @@ class Alarm{
     bool estado_falla = false;
     bool algunoEnFalla = false; // usado para verificar si algun sensor fallo, util para no volver activar actuadores en caso de que otro este en falla
     bool ackExterno = false; //usado para informar ack desde dashboard
-    unsigned long lastPeriodStart = 0;
+	unsigned long lastPeriodStart = 0, prevTimeTestMode = 0;
     const int onDuration = 500;
     const int periodDuration = 800;
     LinkedList<Sensor*> sensores = LinkedList<Sensor*>();
@@ -55,6 +65,7 @@ class Alarm{
     Menu *menu;
     String numero_cel = "";
     int refresh_dweet = 5000;  //milisegundos
+	int refresh_test = 7000;
     unsigned long tiempoAnterior = 0; 
 
    
@@ -62,8 +73,10 @@ class Alarm{
     bool fallaGlobal = false;
     Alarm();
 	  void mostrarMenu();
+	  void actualizarClave(char*);
 	  bool getEnable();
 	  int getMode();
+	  int getEstado();
 	  void setMode(int);
 	  void activar();
 	  void desactivar();
@@ -80,6 +93,7 @@ class Alarm{
     void actualizarDashboard();
     void testEstado();
     void logEvento(String evento, String msg="");
+	bool verificarCodigo(char * _attempt);
 };
 
 
@@ -100,22 +114,21 @@ protected:
 		0b00100
 	};
 
-	int level = 0, pos = 1, lcdButton = btnEMPTY, subPos = 1;
+	int level = -1, pos = 1, lcdButton = btnEMPTY, subPos = 1;
 	int keyCount = 0;
 	bool firstTime = true;
 	bool timeOn = false;
 	unsigned long prevMillis = 0;
-	char CODE[4] = { '1','2','5','6' }; // CODIGO
 	char attempt[4] = {0,0,0,0}; 
 
 	int readLCDButtons();
 	void ingresaCodigo(int);
-	bool verificarCodigo(char *);
 	void cambiarModo();
 
 public:
 	Menu(Alarm *);
 	void printMenu();
+	LiquidCrystal * getLCD();
 
 };
 
